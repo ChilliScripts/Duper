@@ -1,0 +1,118 @@
+--// Player
+local player = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+
+--// GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "BrainrotDupeGui"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+--// Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 400, 0, 220)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -110)
+mainFrame.BackgroundColor3 = Color3.fromRGB(10,10,10)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = gui
+mainFrame.Active = true
+
+--// DRAG SYSTEM (WORKS PC + MOBILE)
+local dragging = false
+local dragStart, startPos
+
+mainFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 
+	or input.UserInputType == Enum.UserInputType.Touch then
+		
+		dragging = true
+		dragStart = input.Position
+		startPos = mainFrame.Position
+		
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+	if dragging then
+		local delta = input.Position - dragStart
+		mainFrame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+--// Title (SCREENSHOT FONT)
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 45)
+title.BackgroundTransparency = 1
+title.Text = "BRAINROT DUPLICATION UTILITY"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.TextScaled = true
+title.Font = Enum.Font.Code
+title.Parent = mainFrame
+
+--// Button
+local dupeButton = Instance.new("TextButton")
+dupeButton.Size = UDim2.new(0.8, 0, 0, 55)
+dupeButton.Position = UDim2.new(0.1, 0, 0.35, 0)
+dupeButton.BackgroundColor3 = Color3.fromRGB(140, 0, 255)
+dupeButton.Text = "DUPE 50M+ BRAINROTS"
+dupeButton.TextColor3 = Color3.fromRGB(255,255,255)
+dupeButton.TextScaled = true
+dupeButton.Font = Enum.Font.Code
+dupeButton.Parent = mainFrame
+
+--// Loading Text
+local loadingText = Instance.new("TextLabel")
+loadingText.Size = UDim2.new(1, -20, 0, 40)
+loadingText.Position = UDim2.new(0, 10, 0.32, 0)
+loadingText.BackgroundTransparency = 1
+loadingText.TextWrapped = true
+loadingText.Text = ""
+loadingText.TextColor3 = Color3.fromRGB(255,255,255)
+loadingText.TextScaled = true
+loadingText.Font = Enum.Font.Code
+loadingText.Visible = false
+loadingText.Parent = mainFrame
+
+--// Loading Bar BG
+local barBG = Instance.new("Frame")
+barBG.Size = UDim2.new(0.8, 0, 0, 15)
+barBG.Position = UDim2.new(0.1, 0, 0.65, 0)
+barBG.BackgroundColor3 = Color3.fromRGB(35,35,35)
+barBG.Visible = false
+barBG.Parent = mainFrame
+
+--// Loading Fill
+local barFill = Instance.new("Frame")
+barFill.Size = UDim2.new(0, 0, 1, 0)
+barFill.BackgroundColor3 = Color3.fromRGB(170,0,255)
+barFill.Parent = barBG
+
+--// Click Event
+dupeButton.MouseButton1Click:Connect(function()
+
+	dupeButton.Visible = false
+	loadingText.Visible = true
+	barBG.Visible = true
+	
+	loadingText.Text = "Found 1 high-value targets. Beginning duplication protocol."
+
+	-- Infinite loading
+	while true do
+		for i = 0, 1, 0.02 do
+			barFill.Size = UDim2.new(i, 0, 1, 0)
+			task.wait(0.03)
+		end
+		barFill.Size = UDim2.new(0, 0, 1, 0)
+	end
+	
+end)
